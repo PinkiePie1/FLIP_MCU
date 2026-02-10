@@ -2,7 +2,6 @@
 #include "main.h"
 
 const _iq invertSpacing = _IQdiv(_IQ(1.0), Spacing);
-const _iq particleInvSpacing = _IQdiv(_IQ(1.0), _IQmpy(_IQ(2.2), ParticleRadius));
 
 #define FLUID_CELL 0U
 #define AIR_CELL 1U
@@ -24,13 +23,10 @@ static _iq solidMask[CellCount];
 static unsigned int cellType[CellCount];
 static _iq particleRestDensity = 0;
 
-#define PNumX (CellNumX * 2U)
-#define PNumY (CellNumY * 2U)
-#define PCellCount (PNumX * PNumY)
+#define CellPrefixCountSize (CellCount + 1U)
 
-static unsigned int numCellParticles[PCellCount];
-static unsigned int firstCellParticle[PCellCount + 1U];
-static unsigned int cellParticleIds[NumberOfParticles];
+static unsigned int cellParticleCountPrefix[CellPrefixCountSize];
+static unsigned int particlePosId[NumberOfParticles];
 
 void printLocation(unsigned int n);
 
@@ -144,27 +140,28 @@ void ParticleIntegrate(_iq xAcceleration, _iq yAcceleration) {
 }
 
 void PushParticlesApart(unsigned int nIters) {
-    memset(numCellParticles, 0, sizeof(numCellParticles));
+    memset(cellParticleCountPrefix, 0, sizeof(cellParticleCountPrefix));
+    memset(particlePosId, 0, sizeof(particlePosId));
 
     for (unsigned int i = 0; i < NumberOfParticles; i++) {
-        int xi = clamp_index(iq_floor_to_int(_IQmpy(particlePos[XID(i)], particleInvSpacing)), 0, (int)PNumX - 1);
-        int yi = clamp_index(iq_floor_to_int(_IQmpy(particlePos[YID(i)], particleInvSpacing)), 0, (int)PNumY - 1);
-        numCellParticles[(unsigned int)xi * PNumY + (unsigned int)yi]++;
+        unsigned int xi = (unsigned int)clamp_index(iq_floor_to_int(_IQmpy(particlePos[XID(i)], invertSpacing)), 0, (int)CellNumX - 1);
+        unsigned int yi = (unsigned int)clamp_index(iq_floor_to_int(_IQmpy(particlePos[YID(i)], invertSpacing)), 0, (int)CellNumY - 1);
+        cellParticleCountPrefix[INDEX(xi, yi)]++;
     }
 
-    unsigned int first = 0;
-    for (unsigned int i = 0; i < PCellCount; i++) {
-        first += numCellParticles[i];
-        firstCellParticle[i] = first;
+    unsigned int prefix = 0;
+    for (unsigned int i = 0; i < CellCount; i++) {
+        prefix += cellParticleCountPrefix[i];
+        cellParticleCountPrefix[i] = prefix;
     }
-    firstCellParticle[PCellCount] = first;
+    cellParticleCountPrefix[CellCount] = prefix;
 
     for (unsigned int i = 0; i < NumberOfParticles; i++) {
-        int xi = clamp_index(iq_floor_to_int(_IQmpy(particlePos[XID(i)], particleInvSpacing)), 0, (int)PNumX - 1);
-        int yi = clamp_index(iq_floor_to_int(_IQmpy(particlePos[YID(i)], particleInvSpacing)), 0, (int)PNumY - 1);
-        unsigned int cellNr = (unsigned int)xi * PNumY + (unsigned int)yi;
-        firstCellParticle[cellNr]--;
-        cellParticleIds[firstCellParticle[cellNr]] = i;
+        unsigned int xi = (unsigned int)clamp_index(iq_floor_to_int(_IQmpy(particlePos[XID(i)], invertSpacing)), 0, (int)CellNumX - 1);
+        unsigned int yi = (unsigned int)clamp_index(iq_floor_to_int(_IQmpy(particlePos[YID(i)], invertSpacing)), 0, (int)CellNumY - 1);
+        unsigned int cellNr = INDEX(xi, yi);
+        unsigned int gridIndex = --cellParticleCountPrefix[cellNr];
+        particlePosId[gridIndex] = i;
     }
 
     const _iq minDist = _IQmpy(_IQ(2.0), ParticleRadius);
@@ -175,20 +172,20 @@ void PushParticlesApart(unsigned int nIters) {
             _iq px = particlePos[XID(i)];
             _iq py = particlePos[YID(i)];
 
-            int pxi = iq_floor_to_int(_IQmpy(px, particleInvSpacing));
-            int pyi = iq_floor_to_int(_IQmpy(py, particleInvSpacing));
-            int x0 = (pxi - 1 > 0) ? pxi - 1 : 0;
-            int y0 = (pyi - 1 > 0) ? pyi - 1 : 0;
-            int x1 = (pxi + 1 < (int)PNumX - 1) ? pxi + 1 : (int)PNumX - 1;
-            int y1 = (pyi + 1 < (int)PNumY - 1) ? pyi + 1 : (int)PNumY - 1;
+            int pxi = clamp_index(iq_floor_to_int(_IQmpy(px, invertSpacing)), 0, (int)CellNumX - 1);
+            int pyi = clamp_index(iq_floor_to_int(_IQmpy(py, invertSpacing)), 0, (int)CellNumY - 1);
+            int x0 = (pxi > 0) ? pxi - 1 : 0;
+            int y0 = (pyi > 0) ? pyi - 1 : 0;
+            int x1 = (pxi + 1 < (int)CellNumX) ? pxi + 1 : (int)CellNumX - 1;
+            int y1 = (pyi + 1 < (int)CellNumY) ? pyi + 1 : (int)CellNumY - 1;
 
             for (int xi = x0; xi <= x1; xi++) {
                 for (int yi = y0; yi <= y1; yi++) {
-                    unsigned int cellNr = (unsigned int)xi * PNumY + (unsigned int)yi;
-                    unsigned int firstIdx = firstCellParticle[cellNr];
-                    unsigned int lastIdx = firstCellParticle[cellNr + 1U];
+                    unsigned int cellNr = INDEX((unsigned int)xi, (unsigned int)yi);
+                    unsigned int firstIdx = cellParticleCountPrefix[cellNr];
+                    unsigned int lastIdx = cellParticleCountPrefix[cellNr + 1U];
                     for (unsigned int j = firstIdx; j < lastIdx; j++) {
-                        unsigned int id = cellParticleIds[j];
+                        unsigned int id = particlePosId[j];
                         if (id == i) {
                             continue;
                         }
