@@ -58,7 +58,7 @@ static void setup_solid_mask(void) {
     for (unsigned int x = 0; x < CellNumX; x++) {
         for (unsigned int y = 0; y < CellNumY; y++) {
             float s = 1.0f;
-            if (x == 0U || x == CellNumX - 1U || y == 0U) {
+            if (x == 0U || x == CellNumX - 1U || y == 0U || y == CellNumY - 1U) {
                 s = 0.0f;
             }
             solidMask[INDEX(x, y)] = s;
@@ -457,28 +457,35 @@ void grid_to_particles(void) {
 }
 
 void visualize_grid() {
-    char visual_buffer[CellNumY][CellNumX + 1];
-    memset(visual_buffer, '-', sizeof(visual_buffer));
+    //显示
+    char visual_buffer[CellNumY][CellNumX+1];
 
-    printf("\e[1;1H\e[2J");
-
-    for (unsigned int p = 0; p < NumberOfParticles; p++) {
-        int x = clamp_index((int)floorf(particlePos[XID(p)] * invertSpacing), 0, (int)CellNumX - 1);
-        int y = clamp_index((int)floorf(particlePos[YID(p)] * invertSpacing), 0, (int)CellNumY - 1);
-        visual_buffer[y][x] = 'x';
+    printf("\e[1;1H\e[2J");//清空屏幕；。
+    
+    // 根据网格类型直接显示
+    for (int y = 0; y < CellNumY; y++) {
+        for (int x = 0; x < CellNumX; x++) {
+            unsigned int cell = cellType[INDEX(x, y)];
+            char symbol = '-';
+            if (cell == FLUID_CELL) {
+                symbol = 'x';
+            } else if (cell == SOLID_CELL) {
+                symbol = '#';
+            }
+            visual_buffer[y][x] = symbol;
+        }
+        visual_buffer[y][CellNumX] = '\0';
     }
 
-    for (unsigned int j = 0; j < CellNumY; j++) {
-        visual_buffer[j][CellNumX] = '\0';
-    }
-
-    printf("FLIP Simulation (X: %d, Y: %d, Particles: %d)\n", CellNumX, CellNumY, NumberOfParticles);
-    for (unsigned int j = 0; j < CellNumY; j++) {
+    
+    printf("PIC Simulation (X: %d, Y: %d, Particles: %d)\n", 
+           CellNumX, CellNumY, NumberOfParticles);
+    for(int j=0; j<CellNumY; j++){
         printf("%s\n", visual_buffer[j]);
     }
     printLocation(0);
     printLocation(1);
-    fflush(stdout);
+    fflush(stdout); 
 }
 
 void printLocation(unsigned int n) {
