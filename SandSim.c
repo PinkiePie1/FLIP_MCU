@@ -1,28 +1,28 @@
 #include "SandSim.h"
 #include "main.h"
 
-const float invertSpacing = 1.0f / Spacing;
-const float particleInvSpacing = 1.0f / (2.2f * ParticleRadius);
+const sim_iq_t invertSpacing = (sim_iq_t)(1.0f / Spacing);
+const sim_iq_t particleInvSpacing = (sim_iq_t)(1.0f / (2.2f * ParticleRadius));
 
 #define FLUID_CELL 0U
 #define AIR_CELL 1U
 #define SOLID_CELL 2U
 
-float particlePos[NumberOfParticles * 2];
-float particleVel[NumberOfParticles * 2];
+sim_iq_t particlePos[NumberOfParticles * 2];
+sim_iq_t particleVel[NumberOfParticles * 2];
 
-static float uVel[CellCount];
-static float vVel[CellCount];
-static float uPrev[CellCount];
-static float vPrev[CellCount];
-static float uWeight[CellCount];
-static float vWeight[CellCount];
+static sim_iq_t uVel[CellCount];
+static sim_iq_t vVel[CellCount];
+static sim_iq_t uPrev[CellCount];
+static sim_iq_t vPrev[CellCount];
+static sim_iq_t uWeight[CellCount];
+static sim_iq_t vWeight[CellCount];
 
-static float pressure[CellCount];
-static float particleDensity[CellCount];
-static float solidMask[CellCount];
+static sim_iq_t pressure[CellCount];
+static sim_iq_t particleDensity[CellCount];
+static sim_iq_t solidMask[CellCount];
 static unsigned int cellType[CellCount];
-static float particleRestDensity = 0.0f;
+static sim_iq_t particleRestDensity = SIM_IQ(0.0f);
 
 #define PNumX (CellNumX * 2U)
 #define PNumY (CellNumY * 2U)
@@ -44,7 +44,7 @@ static int clamp_index(int value, int min_value, int max_value) {
     return value;
 }
 
-static float clampf_local(float value, float min_value, float max_value) {
+static sim_iq_t clampf_local(sim_iq_t value, sim_iq_t min_value, sim_iq_t max_value) {
     if (value < min_value) {
         return min_value;
     }
@@ -102,17 +102,17 @@ void InitParticles() {
     }
 }
 
-void ParticleIntegrate(float xAcceleration, float yAcceleration) {
+void ParticleIntegrate(sim_iq_t xAcceleration, sim_iq_t yAcceleration) {
     const float minX = Spacing + ParticleRadius;
     const float maxX = (CellNumX - 1U) * Spacing - ParticleRadius;
     const float minY = Spacing + ParticleRadius;
     const float maxY = (CellNumY - 1U) * Spacing - ParticleRadius;
 
     for (unsigned int i = 0; i < NumberOfParticles; i++) {
-        particleVel[XID(i)] += xAcceleration * dt;
-        particleVel[YID(i)] += yAcceleration * dt;
-        particlePos[XID(i)] += particleVel[XID(i)] * dt;
-        particlePos[YID(i)] += particleVel[YID(i)] * dt;
+        particleVel[XID(i)] += SIM_MUL(xAcceleration, SIM_IQ(dt));
+        particleVel[YID(i)] += SIM_MUL(yAcceleration, SIM_IQ(dt));
+        particlePos[XID(i)] += SIM_MUL(particleVel[XID(i)], SIM_IQ(dt));
+        particlePos[YID(i)] += SIM_MUL(particleVel[YID(i)], SIM_IQ(dt));
 
         float x = particlePos[XID(i)];
         float y = particlePos[YID(i)];
@@ -143,8 +143,8 @@ void PushParticlesApart(unsigned int nIters) {
     memset(numCellParticles, 0, sizeof(numCellParticles));
 
     for (unsigned int i = 0; i < NumberOfParticles; i++) {
-        int xi = clamp_index((int)floorf(particlePos[XID(i)] * particleInvSpacing), 0, (int)PNumX - 1);
-        int yi = clamp_index((int)floorf(particlePos[YID(i)] * particleInvSpacing), 0, (int)PNumY - 1);
+        int xi = clamp_index(SIM_FLOOR_TO_INT(particlePos[XID(i)] * particleInvSpacing), 0, (int)PNumX - 1);
+        int yi = clamp_index(SIM_FLOOR_TO_INT(particlePos[YID(i)] * particleInvSpacing), 0, (int)PNumY - 1);
         numCellParticles[(unsigned int)xi * PNumY + (unsigned int)yi]++;
     }
 
@@ -156,8 +156,8 @@ void PushParticlesApart(unsigned int nIters) {
     firstCellParticle[PCellCount] = first;
 
     for (unsigned int i = 0; i < NumberOfParticles; i++) {
-        int xi = clamp_index((int)floorf(particlePos[XID(i)] * particleInvSpacing), 0, (int)PNumX - 1);
-        int yi = clamp_index((int)floorf(particlePos[YID(i)] * particleInvSpacing), 0, (int)PNumY - 1);
+        int xi = clamp_index(SIM_FLOOR_TO_INT(particlePos[XID(i)] * particleInvSpacing), 0, (int)PNumX - 1);
+        int yi = clamp_index(SIM_FLOOR_TO_INT(particlePos[YID(i)] * particleInvSpacing), 0, (int)PNumY - 1);
         unsigned int cellNr = (unsigned int)xi * PNumY + (unsigned int)yi;
         firstCellParticle[cellNr]--;
         cellParticleIds[firstCellParticle[cellNr]] = i;
@@ -171,8 +171,8 @@ void PushParticlesApart(unsigned int nIters) {
             float px = particlePos[XID(i)];
             float py = particlePos[YID(i)];
 
-            int pxi = (int)floorf(px * particleInvSpacing);
-            int pyi = (int)floorf(py * particleInvSpacing);
+            int pxi = SIM_FLOOR_TO_INT(px * particleInvSpacing);
+            int pyi = SIM_FLOOR_TO_INT(py * particleInvSpacing);
             int x0 = (pxi - 1 > 0) ? pxi - 1 : 0;
             int y0 = (pyi - 1 > 0) ? pyi - 1 : 0;
             int x1 = (pxi + 1 < (int)PNumX - 1) ? pxi + 1 : (int)PNumX - 1;
@@ -193,13 +193,13 @@ void PushParticlesApart(unsigned int nIters) {
                         float qy = particlePos[YID(id)];
                         float dx = qx - px;
                         float dy = qy - py;
-                        float d2 = dx * dx + dy * dy;
+                        sim_iq_t d2 = SIM_ADD(SIM_MUL(dx, dx), SIM_MUL(dy, dy));
                         if (d2 > minDist2 || d2 == 0.0f) {
                             continue;
                         }
 
-                        float d = sqrtf(d2);
-                        float s = 0.5f * (minDist - d) / d;
+                        float d = SIM_SQRT(d2);
+                        sim_iq_t s = SIM_MUL(SIM_IQ(0.5f), SIM_DIV((minDist - d), d));
                         dx *= s;
                         dy *= s;
                         particlePos[XID(i)] -= dx;
@@ -224,8 +224,8 @@ void density_update(void) {
         float x = clampf_local(particlePos[XID(i)], h, (CellNumX - 1U) * h);
         float y = clampf_local(particlePos[YID(i)], h, (CellNumY - 1U) * h);
 
-        int x0 = (int)floorf((x - h2) * h1);
-        int y0 = (int)floorf((y - h2) * h1);
+        int x0 = SIM_FLOOR_TO_INT((x - h2) * h1);
+        int y0 = SIM_FLOOR_TO_INT((y - h2) * h1);
         x0 = clamp_index(x0, 0, (int)CellNumX - 2);
         y0 = clamp_index(y0, 0, (int)CellNumY - 2);
         int x1 = x0 + 1;
@@ -271,8 +271,8 @@ void particles_to_grid(void) {
     }
 
     for (unsigned int i = 0; i < NumberOfParticles; i++) {
-        int xi = clamp_index((int)floorf(particlePos[XID(i)] * invertSpacing), 0, (int)CellNumX - 1);
-        int yi = clamp_index((int)floorf(particlePos[YID(i)] * invertSpacing), 0, (int)CellNumY - 1);
+        int xi = clamp_index(SIM_FLOOR_TO_INT(particlePos[XID(i)] * invertSpacing), 0, (int)CellNumX - 1);
+        int yi = clamp_index(SIM_FLOOR_TO_INT(particlePos[YID(i)] * invertSpacing), 0, (int)CellNumY - 1);
         unsigned int cellNr = INDEX((unsigned int)xi, (unsigned int)yi);
         if (cellType[cellNr] == AIR_CELL) {
             cellType[cellNr] = FLUID_CELL;
@@ -286,15 +286,15 @@ void particles_to_grid(void) {
     for (int component = 0; component < 2; component++) {
         float dx = (component == 0) ? 0.0f : h2;
         float dy = (component == 0) ? h2 : 0.0f;
-        float *f = (component == 0) ? uVel : vVel;
-        float *w = (component == 0) ? uWeight : vWeight;
+        sim_iq_t *f = (component == 0) ? uVel : vVel;
+        sim_iq_t *w = (component == 0) ? uWeight : vWeight;
 
         for (unsigned int i = 0; i < NumberOfParticles; i++) {
             float x = clampf_local(particlePos[XID(i)], h, (CellNumX - 1U) * h);
             float y = clampf_local(particlePos[YID(i)], h, (CellNumY - 1U) * h);
 
-            int x0 = (int)floorf((x - dx) * h1);
-            int y0 = (int)floorf((y - dy) * h1);
+            int x0 = SIM_FLOOR_TO_INT((x - dx) * h1);
+            int y0 = SIM_FLOOR_TO_INT((y - dy) * h1);
             x0 = clamp_index(x0, 0, (int)CellNumX - 2);
             y0 = clamp_index(y0, 0, (int)CellNumY - 2);
             int x1 = x0 + 1;
@@ -353,7 +353,7 @@ void compute_grid_forces(unsigned int nIters) {
     memcpy(uPrev, uVel, sizeof(uVel));
     memcpy(vPrev, vVel, sizeof(vVel));
 
-    const float cp = 1000.0f * Spacing / dt;
+    const sim_iq_t cp = SIM_DIV(SIM_MUL(SIM_IQ(1000.0f), SIM_IQ(Spacing)), SIM_IQ(dt));
 
     for (unsigned int iter = 0; iter < nIters; iter++) {
         for (unsigned int x = 1; x < CellNumX - 1U; x++) {
@@ -386,9 +386,9 @@ void compute_grid_forces(unsigned int nIters) {
                     }
                 }
 
-                float p = -div / s;
+                sim_iq_t p = SIM_DIV(-div, s);
                 p *= overRelaxiation;
-                pressure[center] += cp * p;
+                pressure[center] += SIM_MUL(cp, p);
 
                 uVel[center] -= sx0 * p;
                 uVel[right] += sx1 * p;
@@ -400,7 +400,7 @@ void compute_grid_forces(unsigned int nIters) {
 }
 
 void grid_to_particles(void) {
-    const float flipRatio = 0.9f;
+    const sim_iq_t flipRatio = SIM_IQ(0.9f);
     const float h = Spacing;
     const float h1 = invertSpacing;
     const float h2 = 0.5f * h;
@@ -408,16 +408,16 @@ void grid_to_particles(void) {
     for (int component = 0; component < 2; component++) {
         float dx = (component == 0) ? 0.0f : h2;
         float dy = (component == 0) ? h2 : 0.0f;
-        float *f = (component == 0) ? uVel : vVel;
-        float *prevF = (component == 0) ? uPrev : vPrev;
+        sim_iq_t *f = (component == 0) ? uVel : vVel;
+        sim_iq_t *prevF = (component == 0) ? uPrev : vPrev;
         int offset = (component == 0) ? (int)CellNumY : 1;
 
         for (unsigned int i = 0; i < NumberOfParticles; i++) {
             float x = clampf_local(particlePos[XID(i)], h, (CellNumX - 1U) * h);
             float y = clampf_local(particlePos[YID(i)], h, (CellNumY - 1U) * h);
 
-            int x0 = clamp_index((int)floorf((x - dx) * h1), 0, (int)CellNumX - 2);
-            int y0 = clamp_index((int)floorf((y - dy) * h1), 0, (int)CellNumY - 2);
+            int x0 = clamp_index(SIM_FLOOR_TO_INT((x - dx) * h1), 0, (int)CellNumX - 2);
+            int y0 = clamp_index(SIM_FLOOR_TO_INT((y - dy) * h1), 0, (int)CellNumY - 2);
             int x1 = x0 + 1;
             int y1 = y0 + 1;
 
@@ -451,7 +451,7 @@ void grid_to_particles(void) {
                         + valid2 * d2 * (f[nr2] - prevF[nr2]) + valid3 * d3 * (f[nr3] - prevF[nr3])) / d;
             float oldV = particleVel[2 * i + (unsigned int)component];
             float flipV = oldV + corr;
-            particleVel[2 * i + (unsigned int)component] = (1.0f - flipRatio) * picV + flipRatio * flipV;
+            particleVel[2 * i + (unsigned int)component] = SIM_ADD(SIM_MUL(SIM_SUB(SIM_IQ(1.0f), flipRatio), picV), SIM_MUL(flipRatio, flipV));
         }
     }
 }
@@ -489,5 +489,5 @@ void visualize_grid() {
 }
 
 void printLocation(unsigned int n) {
-    printf("Particle %d location:%.2f,%.2f, speed is %.2f,%.2f \n", n, particlePos[XID(n)], particlePos[YID(n)], particleVel[XID(n)], particleVel[YID(n)]);
+    printf("Particle %d location:%.2f,%.2f, speed is %.2f,%.2f \n", n, SIM_TO_FLOAT(particlePos[XID(n)]), SIM_TO_FLOAT(particlePos[YID(n)]), SIM_TO_FLOAT(particleVel[XID(n)]), SIM_TO_FLOAT(particleVel[YID(n)]));
 }

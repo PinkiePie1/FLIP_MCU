@@ -9,7 +9,7 @@ void main(){
     InitParticles();
 
     for (int i=0;i<600;i++){
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(SIM_IQ(0.0f), SIM_IQ(9.8f));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -28,7 +28,7 @@ for (int j =0;j<3;j++)
             printf("%d\n",dummy++);
            
         }
-        ParticleIntegrate(0.5, 9.8);
+        ParticleIntegrate(SIM_IQ(0.5f), SIM_IQ(9.8f));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -42,7 +42,7 @@ for (int j =0;j<3;j++)
             printf("%d\n",dummy++);
            
         }
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(SIM_IQ(0.0f), SIM_IQ(9.8f));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -55,7 +55,7 @@ for (int j =0;j<3;j++)
             visualize_grid();
             printf("%d\n",dummy++);         
         }
-        ParticleIntegrate(-20, 9.8);
+        ParticleIntegrate(SIM_IQ(-20.0f), SIM_IQ(9.8f));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -69,7 +69,7 @@ for (int j =0;j<3;j++)
             printf("%d\n",dummy++);
            
         }
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(SIM_IQ(0.0f), SIM_IQ(9.8f));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -80,7 +80,7 @@ for (int j =0;j<3;j++)
 	}
 
     for (int i=0;i<600;i++){
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(SIM_IQ(0.0f), SIM_IQ(9.8f));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();

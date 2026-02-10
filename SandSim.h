@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "iqmath_compat.h"
 
 //模拟所用的参数
 #define NumberOfParticles 128U //粒子数量
@@ -22,7 +23,7 @@
 
 
 
-void ParticleIntegrate(float xAcceleration, float yAcceleration);  //根据所提供的加速度仿真粒子的行动，注意墙壁碰撞应该在这里进行。
+void ParticleIntegrate(sim_iq_t xAcceleration, sim_iq_t yAcceleration);  //根据所提供的加速度仿真粒子的行动，注意墙壁碰撞应该在这里进行。
 void PushParticlesApart(unsigned int nIters);                     //将粒子相互推开
 
 void density_update(void);
