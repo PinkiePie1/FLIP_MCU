@@ -9,7 +9,7 @@ void main(){
     InitParticles();
 
     for (int i=0;i<600;i++){
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(_IQ(0.0), _IQ(9.8));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -18,7 +18,7 @@ void main(){
     }
 
     visualize_grid();
-    printf("%d\n",dummy++);  
+    printf("%d\n",dummy++);
 
 for (int j =0;j<3;j++)
     {
@@ -26,9 +26,9 @@ for (int j =0;j<3;j++)
         if (i%5==0){
             visualize_grid();
             printf("%d\n",dummy++);
-           
+
         }
-        ParticleIntegrate(0.5, 9.8);
+        ParticleIntegrate(_IQ(0.5), _IQ(9.8));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -40,9 +40,9 @@ for (int j =0;j<3;j++)
         if (i%2==0){
             visualize_grid();
             printf("%d\n",dummy++);
-           
+
         }
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(_IQ(0.0), _IQ(9.8));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -53,9 +53,9 @@ for (int j =0;j<3;j++)
     for (int i=0;i<20;i++){
         if (i%2==0){
             visualize_grid();
-            printf("%d\n",dummy++);         
+            printf("%d\n",dummy++);
         }
-        ParticleIntegrate(-20, 9.8);
+        ParticleIntegrate(_IQ(-20.0), _IQ(9.8));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -67,9 +67,9 @@ for (int j =0;j<3;j++)
         if (i%2==0){
             visualize_grid();
             printf("%d\n",dummy++);
-           
+
         }
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(_IQ(0.0), _IQ(9.8));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -77,10 +77,10 @@ for (int j =0;j<3;j++)
         grid_to_particles();
     }
 
-	}
+    }
 
     for (int i=0;i<600;i++){
-        ParticleIntegrate(0, 9.8);
+        ParticleIntegrate(_IQ(0.0), _IQ(9.8));
         PushParticlesApart(2);
         particles_to_grid();
         density_update();
@@ -89,7 +89,7 @@ for (int j =0;j<3;j++)
     }
 
     visualize_grid();
-  
-    
+
+
     return;
 }
