@@ -4,7 +4,7 @@
 
 ## 目前功能
 
-物理和算法部分已可在CH32V203上运转，摆脱了对FPU的依赖，纯模拟可跑到130FPS。firmware和对应的定点数代码详见[此处](https://github.com/PinkiePie1/ch32DevEnv/tree/master/CH32V203apps/FLIP)。
+物理和算法部分已可在CH32V203上运转，摆脱了对FPU的依赖，纯模拟可跑到130FPS。firmware和对应的定点数代码详见[Here](https://github.com/PinkiePie1/CH32V203Dev/tree/master/Apps/FLIP)。
 
 ![test](https://github.com/user-attachments/assets/98db300b-1680-49b1-b5f7-09cf8e177358)
 
