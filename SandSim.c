@@ -119,19 +119,19 @@ void ParticleIntegrate(float xAcceleration, float yAcceleration) {
 
         if (x < minX) {
             x = minX;
-            particleVel[XID(i)] = 0.0f;
+            particleVel[XID(i)] *= BOUNCYNESS;
         }
         if (x > maxX) {
             x = maxX;
-            particleVel[XID(i)] = 0.0f;
+            particleVel[XID(i)] *= BOUNCYNESS;
         }
         if (y < minY) {
             y = minY;
-            particleVel[YID(i)] = 0.0f;
+            particleVel[YID(i)] *= BOUNCYNESS;
         }
         if (y > maxY) {
             y = maxY;
-            particleVel[YID(i)] = 0.0f;
+            particleVel[YID(i)] *= BOUNCYNESS;
         }
 
         particlePos[XID(i)] = x;
