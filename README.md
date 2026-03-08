@@ -4,13 +4,12 @@
 
 ## 目前功能
 
-物理和算法部分已可在CH32V203上运转，摆脱了对FPU的依赖，纯模拟可跑到130FPS。firmware和对应的定点数代码详见[Here](https://github.com/PinkiePie1/CH32V203Dev/tree/master/Apps/FLIP)。
+物理和算法部分已可在CH32V203上运转，摆脱了对FPU的依赖，纯模拟可跑到180FPS。firmware和对应的定点数代码详见[Here](https://github.com/PinkiePie1/CH32V203Dev/tree/master/Apps/led_fluid)。
+该版本已接入LED矩阵和加速度传感器，成功实现了核心功能。
 
-![test](https://github.com/user-attachments/assets/98db300b-1680-49b1-b5f7-09cf8e177358)
+<img width="366" height="376" alt="image" src="https://github.com/user-attachments/assets/59a80178-057f-41ac-9ac1-86097e888443" />
 
-当然，在有FPU的CH32v3上直接跑这个仓库里的单精度浮点数版本得快得多。
+当然，在有FPU的CH32v3上直接跑这个仓库里的单精度浮点数版本得快得多，由于CH32v303和V203几乎全部兼容，如需要进行迁移预计很轻松。
 
 ## 还需实现的部分
-
-把输入改为重力感应
-显示更改为LED点阵，弄基于DMA的LED点阵驱动。
+弄得更漂亮一点
